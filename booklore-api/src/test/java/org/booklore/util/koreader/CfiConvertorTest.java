@@ -195,6 +195,42 @@ class CfiConvertorTest {
             assertThrows(IllegalArgumentException.class,
                     () -> converter.xPointerToCfi("/invalid/path"));
         }
+
+        @Test
+        void xPointerToCfi_withIndexedTextNodeOffset() {
+            // KOReader emits text()[k].N when a paragraph contains inline markup
+            CfiConvertor converter = new CfiConvertor(complexDocument, 0);
+            String xpointer = "/body/DocFragment[1]/body/section[1]/div[1]/p[1]/text()[1].7";
+
+            String cfi = converter.xPointerToCfi(xpointer);
+
+            assertNotNull(cfi);
+            assertTrue(cfi.startsWith("epubcfi("));
+            assertTrue(cfi.contains(":7")); // Text offset
+        }
+
+        @Test
+        void xPointerToCfi_withIndexedTextNodeOffset_secondTextNode() {
+            CfiConvertor converter = new CfiConvertor(complexDocument, 0);
+            String xpointer = "/body/DocFragment[1]/body/section[1]/div[1]/p[1]/text()[2].3";
+
+            String cfi = converter.xPointerToCfi(xpointer);
+
+            assertNotNull(cfi);
+            assertTrue(cfi.contains(":3"));
+        }
+
+        @Test
+        void xPointerToCfi_withTrailingIndexedTextNodeWithoutOffset() {
+            // A bare trailing text() step resolves to its parent element
+            CfiConvertor converter = new CfiConvertor(simpleDocument, 0);
+            String xpointer = "/body/DocFragment[1]/body/div[1]/p[1]/text()[2]";
+
+            String cfi = converter.xPointerToCfi(xpointer);
+
+            assertNotNull(cfi);
+            assertTrue(cfi.startsWith("epubcfi("));
+        }
     }
 
     @Nested

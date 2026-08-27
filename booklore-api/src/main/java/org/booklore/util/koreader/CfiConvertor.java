@@ -21,7 +21,7 @@ public class CfiConvertor {
     private static final Pattern CFI_SPINE_PATTERN = Pattern.compile("^/6/(\\d+)!(.*)$");
     private static final Pattern CFI_PATH_STEP_PATTERN = Pattern.compile("/(\\d+)(?:\\[(.*?)\\])?(?::(\\d+))?");
     private static final Pattern XPOINTER_DOC_FRAGMENT_PATTERN = Pattern.compile("^/body/DocFragment\\[(\\d+)\\]/body(.*)$");
-    private static final Pattern XPOINTER_TEXT_OFFSET_PATTERN = Pattern.compile("/text\\(\\)\\.(\\d+)$");
+    private static final Pattern XPOINTER_TEXT_OFFSET_PATTERN = Pattern.compile("/text\\(\\)(?:\\[\\d+\\])?\\.(\\d+)$");
     private static final Pattern XPOINTER_SEGMENT_WITH_INDEX_PATTERN = Pattern.compile("^(\\w+)\\[(\\d+)\\]$");
     private static final Pattern XPOINTER_SEGMENT_WITHOUT_INDEX_PATTERN = Pattern.compile("^(\\w+)$");
     private static final Pattern TRAILING_TEXT_OFFSET_PATTERN = Pattern.compile("/text\\(\\).*$");
@@ -208,6 +208,10 @@ public class CfiConvertor {
             textOffset = Integer.parseInt(textOffsetMatcher.group(1));
             elementPath = XPOINTER_TEXT_OFFSET_PATTERN.matcher(xpointer).replaceAll("");
         }
+
+        // A trailing text() step without an offset (e.g. /text()[2]) is not an element
+        // segment and cannot be resolved below; strip it and resolve the parent element.
+        elementPath = TRAILING_TEXT_OFFSET_PATTERN.matcher(elementPath).replaceAll("");
 
         Element element = resolveXPointerPath(elementPath);
         if (element == null) {
